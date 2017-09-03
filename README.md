@@ -60,7 +60,7 @@ Along with the Environment Variables from the [Base image](https://hub.docker.co
 | `CF_EMAIL` | Your Cloudflare Email Address |
 | `CF_TOKEN` | Token for the Domain |
 | `CF_ZONE_ID`   | Cloudflare Zone ID |
-| `CF_TARGET_DOMAIN | Destination Host to forward records to e.g. `host.example.com` |
+| `CF_TARGET_DOMAIN` | Destination Host to forward records to e.g. `host.example.com` |
 
 # Maintenance
 #### Shell Access
