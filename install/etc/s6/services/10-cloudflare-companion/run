@@ -5,8 +5,8 @@ do
   sleep 1
 done
 
-if [ ! -f /tmp/state/10-cloudflare companion ]; then
-cat <<EOF > /usr/sbin/cloudflare-companion.py
+if [ ! -f /tmp/state/10-cloudflare-companion ]; then
+	cat <<EOF > /usr/sbin/cloudflare-companion.py
 import os
 import docker
 import CloudFlare
