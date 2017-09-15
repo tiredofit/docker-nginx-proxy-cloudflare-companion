@@ -6,25 +6,38 @@ do
 done
 
 if [ ! -f /tmp/state/10-cloudflare-companion ]; then
-	cat <<EOF > /usr/sbin/cloudflare-companion.py
+
+    cat <<EOF > /usr/sbin/cloudflare-companion.py
 import os
 import docker
 import CloudFlare
 from datetime import datetime
 
-
 def point_domain(name):
     try:
-        r = cf.zones.dns_records.post(zone_id,
-                                      data={u'type': u'CNAME', u'name': name, u'content': target_domain, u'ttl': 120,
-                                            u'proxied': False})
+EOF
+
+    for (( i = 1; i <= 2; i++ ))
+    do
+        cat <<EOF >> /usr/sbin/cloudflare-companion.py
+    
+        domain${i} = os.environ['DOMAIN${i}']
+        zone_id${i} = os.environ['DOMAIN${i}_ZONE_ID']
+        if name.find(domain${i}) != -1:
+            r = cf.zones.dns_records.post(zone_id${i},data={u'type': u'CNAME', u'name': name, u'content': target_domain, u'ttl': 120, u'proxied': False} )
+
+EOF
+done
+
+
+cat <<EOF >> /usr/sbin/cloudflare-companion.py
     except CloudFlare.exceptions.CloudFlareAPIError as e:
         print '/zones.dns_records.post %s - %d %s' % (name, e, e)
 
 
 def check_container(c):
     for prop in c.attrs.get(u'Config').get(u'Env'):
-        if u'VIRTUAL_HOST' in prop:
+         if u'VIRTUAL_HOST' in prop or u'DNS_NAME' in prop:
             value = prop.split("=")[1].strip()
             if ',' in value:
                 for v in value.split(","):
@@ -39,11 +52,6 @@ def init():
 
 
 try:
-    zone_id = os.environ['CF_ZONE_ID']
-except KeyError as e:
-    exit('ZONE_ID not defined')
-
-try:
     email = os.environ['CF_EMAIL']
 except KeyError as e:
     exit('EMAIL not defined')
@@ -54,9 +62,19 @@ except KeyError as e:
     exit('TOKEN not defined')
 
 try:
-    target_domain = os.environ['CF_TARGET_DOMAIN']
+    target_domain = os.environ['TARGET_DOMAIN']
 except KeyError as e:
     exit('TARGET_DOMAIN not defined')
+
+try:
+    domain = os.environ['DOMAIN1']
+except KeyError as e:
+    exit('DOMAIN1 not defined')
+
+try:
+    zone_id1 = os.environ['DOMAIN1_ZONE_ID']
+except KeyError as e:
+    exit('DOMAIN1_ZONE_ID not defined')
 
 cf = CloudFlare.CloudFlare(email=email, token=token)
 client = docker.DockerClient(base_url='unix://var/run/docker.sock')

@@ -1,10 +1,11 @@
 #!/usr/bin/with-contenv bash
 
 ### Sanity Test
-  if [ -z ${CF_ZONE_ID} ] ; then printf "** [cloudflare-companion] ERROR: CF_ZONE_ID is not set!\n"; exit 1; fi;
-  if [ -z ${CF_EMAIL} ] ; then printf ""** [cloudflare-companion] ERROR: CF_EMAIL is not set!\n"; exit 1; fi;
-  if [ -z ${CF_TOKEN} ] ; then printf ""** [cloudflare-companion] ERROR: CF_TOKEN is not set!\n"; exit 1; fi;
-  if [ -z ${CF_TARGET_DOMAIN} ] ; then printf "** [cloudflare-companion] ERROR: CF_TARGET_DOMAIN is not set!\n"; exit 1; fi;
+  if [ -z ${CF_EMAIL} ] ; then printf "** [cloudflare-companion] ERROR: CF_EMAIL is not set!\n"; exit 1; fi;
+  if [ -z ${CF_TOKEN} ] ; then printf "** [cloudflare-companion] ERROR: CF_TOKEN is not set!\n"; exit 1; fi;
+  if [ -z ${TARGET_DOMAIN} ] ; then printf "** [cloudflare-companion] ERROR: TARGET_DOMAIN is not set!\n"; exit 1; fi;
+  if [ -z ${DOMAIN1} ] ; then printf "** [cloudflare-companion] ERROR: DOMAIN1 is not set!\n"; exit 1; fi;
+  if [ -z ${DOMAIN1_ZONE_ID} ] ; then printf "** [cloudflare-companion] ERROR: DOMAIN1_ZONE_ID!\n"; exit 1; fi;
 
 mkdir -p /tmp/state
 touch /tmp/state/10-cloudflare-companion-init

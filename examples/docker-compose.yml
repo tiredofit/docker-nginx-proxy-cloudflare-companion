@@ -42,8 +42,9 @@ services:
     environment:
       - CF_EMAIL=noemail@example.org
       - CF_TOKEN=1234
-      - CF_ZONE_ID=foo
-      - CF_TARGET_DOMAIN=host.example.org
+      - TARGET_DOMAIN=host.example.org
+      - DOMAIN1=example.org
+      - DOMAIN2_ZONE_ID=1234567890
     restart: always
 
 networks:
