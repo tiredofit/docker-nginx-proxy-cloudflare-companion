@@ -67,7 +67,7 @@ Along with the Environment Variables from the [Base image](https://hub.docker.co
 | `DOMAIN1_PROXIED`   | Domain 1 True of False if proxied |
 | `DOMAIN2`   | (optional Domain 2 you wish to update records for. |
 | `DOMAIN2_ZONE_ID`   | Domain 2 Zone ID from Cloudflare |
-| `DOMAIN1_PROXIED`   | Domain 1 True of False if proxied |
+| `DOMAIN2_PROXIED`   | Domain 1 True of False if proxied |
 | `DOMAIN3....`   | And so on.. |
 
 
