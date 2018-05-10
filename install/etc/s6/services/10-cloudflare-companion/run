@@ -20,11 +20,19 @@ EOF
     for (( i = 1; i <= 2; i++ ))
     do
         cat <<EOF >> /usr/sbin/cloudflare-companion.py
-    
+
         domain${i} = os.environ['DOMAIN${i}']
         zone_id${i} = os.environ['DOMAIN${i}_ZONE_ID']
+        try:
+            if os.environ['DOMAIN${i}_PROXIED'] == "True":
+                proxied_flag${i} = True
+            else:
+                proxied_flag${i} = False
+        except KeyError:
+            proxied_flag${i} = False
+
         if name.find(domain${i}) != -1:
-            r = cf.zones.dns_records.post(zone_id${i},data={u'type': u'CNAME', u'name': name, u'content': target_domain, u'ttl': 120, u'proxied': False} )
+            r = cf.zones.dns_records.post(zone_id${i},data={u'type': u'CNAME', u'name': name, u'content': target_domain, u'ttl': 120, u'proxied': proxied_flag${i}} )
 
 EOF
 done
@@ -99,5 +107,3 @@ fi
 echo ''
 echo '** Starting Cloudflare Companion'
 exec python -u /usr/sbin/cloudflare-companion.py
-
-
