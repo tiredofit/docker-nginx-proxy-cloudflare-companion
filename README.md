@@ -64,8 +64,10 @@ Along with the Environment Variables from the [Base image](https://hub.docker.co
 | `TARGET_DOMAIN` | Destination Host to forward records to e.g. ``host.example.com` |
 | `DOMAIN1`   | Domain 1 you wish to update records for. |
 | `DOMAIN1_ZONE_ID`   | Domain 1 Zone ID from Cloudflare |
+| `DOMAIN1_PROXIED`   | Domain 1 True of False if proxied |
 | `DOMAIN2`   | (optional Domain 2 you wish to update records for. |
 | `DOMAIN2_ZONE_ID`   | Domain 2 Zone ID from Cloudflare |
+| `DOMAIN2_PROXIED`   | Domain 1 True of False if proxied |
 | `DOMAIN3....`   | And so on.. |
 
 
@@ -73,7 +75,7 @@ Along with the Environment Variables from the [Base image](https://hub.docker.co
 # Maintenance
 #### Shell Access
 
-For debugging and maintenance purposes you may want access the containers shell. 
+For debugging and maintenance purposes you may want access the containers shell.
 
 ```bash
 docker exec -it (whatever your container name is e.g. nginx-proxy-cloudflare-companion) bash
