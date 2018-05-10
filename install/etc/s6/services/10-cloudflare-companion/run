@@ -24,7 +24,7 @@ EOF
         domain${i} = os.environ['DOMAIN${i}']
         zone_id${i} = os.environ['DOMAIN${i}_ZONE_ID']
         try:
-            if os.environ['DOMAIN${i}_PROXIED'] == "True":
+            if os.environ['DOMAIN${i}_PROXIED'].upper() == "TRUE":
                 proxied_flag${i} = True
             else:
                 proxied_flag${i} = False
