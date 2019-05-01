@@ -11,7 +11,6 @@ services:
       - ./conf/vhost.d:/etc/nginx/vhost.d
       - ./conf/html:/usr/share/nginx/html
       - ./conf/certs:/etc/nginx/certs:ro
-      - /etc/localtime:/etc/localtime:ro
       - ./logs:/var/log/nginx
       - /var/run/docker.sock:/tmp/docker.sock:ro
     networks:
@@ -28,7 +27,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./conf/certs:/etc/nginx/certs:rw
-      - /etc/localtime:/etc/localtime:ro
     restart: always
 
   cloudflare-companion:
@@ -38,13 +36,12 @@ services:
       - nginx-proxy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /etc/localtime:/etc/localtime:ro
     environment:
       - CF_EMAIL=noemail@example.org
       - CF_TOKEN=1234
       - TARGET_DOMAIN=host.example.org
       - DOMAIN1=example.org
-      - DOMAIN2_ZONE_ID=1234567890
+      - DOMAIN1_ZONE_ID=1234567890
     restart: always
 
 networks:

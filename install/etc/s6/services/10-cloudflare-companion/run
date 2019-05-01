@@ -1,109 +1,14 @@
 #!/usr/bin/with-contenv bash
 
-while [ ! -f /tmp/state/99-container-init ]
+while [ ! -f /tmp/state/10-cloudflare-companion-init ]
 do
   sleep 1
 done
 
 if [ ! -f /tmp/state/10-cloudflare-companion ]; then
-
-    cat <<EOF > /usr/sbin/cloudflare-companion.py
-import os
-import docker
-import CloudFlare
-from datetime import datetime
-
-def point_domain(name):
-    try:
-EOF
-
-    for (( i = 1; i <= 2; i++ ))
-    do
-        cat <<EOF >> /usr/sbin/cloudflare-companion.py
-
-        domain${i} = os.environ['DOMAIN${i}']
-        zone_id${i} = os.environ['DOMAIN${i}_ZONE_ID']
-        try:
-            if os.environ['DOMAIN${i}_PROXIED'].upper() == "TRUE":
-                proxied_flag${i} = True
-            else:
-                proxied_flag${i} = False
-        except KeyError:
-            proxied_flag${i} = False
-
-        if name.find(domain${i}) != -1:
-            r = cf.zones.dns_records.post(zone_id${i},data={u'type': u'CNAME', u'name': name, u'content': target_domain, u'ttl': 120, u'proxied': proxied_flag${i}} )
-
-EOF
-done
-
-
-cat <<EOF >> /usr/sbin/cloudflare-companion.py
-    except CloudFlare.exceptions.CloudFlareAPIError as e:
-        print '/zones.dns_records.post %s - %d %s' % (name, e, e)
-
-
-def check_container(c):
-    for prop in c.attrs.get(u'Config').get(u'Env'):
-         if u'VIRTUAL_HOST' in prop or u'DNS_NAME' in prop:
-            value = prop.split("=")[1].strip()
-            if ',' in value:
-                for v in value.split(","):
-                    point_domain(v)
-            else:
-                point_domain(value)
-
-
-def init():
-    for c in client.containers.list(all=True):
-        check_container(c)
-
-
-try:
-    email = os.environ['CF_EMAIL']
-except KeyError as e:
-    exit('EMAIL not defined')
-
-try:
-    token = os.environ['CF_TOKEN']
-except KeyError as e:
-    exit('TOKEN not defined')
-
-try:
-    target_domain = os.environ['TARGET_DOMAIN']
-except KeyError as e:
-    exit('TARGET_DOMAIN not defined')
-
-try:
-    domain = os.environ['DOMAIN1']
-except KeyError as e:
-    exit('DOMAIN1 not defined')
-
-try:
-    zone_id1 = os.environ['DOMAIN1_ZONE_ID']
-except KeyError as e:
-    exit('DOMAIN1_ZONE_ID not defined')
-
-cf = CloudFlare.CloudFlare(email=email, token=token)
-client = docker.DockerClient(base_url='unix://var/run/docker.sock')
-
-init()
-
-t = datetime.now().time().strftime("%s")
-
-for event in client.events(since=t, filters={'status': u'start'}, decode=True):
-    if event.get(u'status') == u'start':
-        try:
-            print u'started %s' % event.get(u'id')
-            check_container(client.containers.get(event.get(u'id')))
-        except docker.errors.NotFound as e:
-            print 'Ignoring %s' % event.get(u'from')
-EOF
-
-        chmod +x /usr/sbin/cloudflare-companion.py
-	echo 'Initialization Complete' >/tmp/state/10-cloudflare-companion
+    echo 'Initialization Complete' > /tmp/state/10-cloudflare-companion
 fi
 
 echo ''
-echo '** Starting Cloudflare Companion'
-exec python -u /usr/sbin/cloudflare-companion.py
+echo '** [nginx-proxy-cloudflare-companion] Starting Nginx Proxy Cloudflare Companion'
+exec python -u /usr/sbin/cloudflare-companion

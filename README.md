@@ -1,10 +1,15 @@
-# hub.docker.com/tiredofit/nginx-proxy-cloudflare-companion
+# hub.docker.com/r/tiredofit/nginx-proxy-cloudflare-companion
+
+[![Build Status](https://img.shields.io/docker/build/tiredofit/nginx-proxy-cloudflare-companion.svg)](https://hub.docker.com/r/tiredofit/nginx-proxy-cloudflare-companion)
+[![Docker Pulls](https://img.shields.io/docker/pulls/tiredofit/nginx-proxy-cloudflare-companion.svg)](https://hub.docker.com/r/tiredofit/nginx-proxy-cloudflare-companion)
+[![Docker Stars](https://img.shields.io/docker/stars/tiredofit/nginx-proxy-cloudflare-companion.svg)](https://hub.docker.com/r/tiredofit/nginx-proxy-cloudflare-companion)
+[![Docker Layers](https://images.microbadger.com/badges/image/tiredofit/nginx-proxy-cloudflare-companion.svg)](https://microbadger.com/images/tiredofit/nginx-proxy-cloudflare-companion)
 
 # Introduction
 
 Dockerfile to build a Container to automatically update Cloudflare DNS records upon container start. A time saver if you are regularly moving containers around to different systems. This will allow you to set multiple zone's you wish to update.
 
-* This Container uses a [customized Alpine Linux base](https://hub.docker.com/r/tiredofit/alpine) which includes [s6 overlay](https://github.com/just-containers/s6-overlay) enabled for PID 1 Init capabilities, [zabbix-agent](https://zabbix.org) based on TRUNK compiled for individual container monitoring, Cron also installed along with other tools (bash,curl, less, logrotate, nano, vim) for easier management. It also supports sending to external SMTP servers..
+* This Container uses a [customized Alpine Linux base](https://hub.docker.com/r/tiredofit/alpine) which includes [s6 overlay](https://github.com/just-containers/s6-overlay) enabled for PID 1 Init capabilities, [zabbix-agent](https://zabbix.org) for individual container monitoring, Cron also installed along with other tools (bash,curl, less, logrotate, nano, vim) for easier management. It also supports sending to external SMTP servers..
 
 
 [Changelog](CHANGELOG.md)
@@ -34,14 +39,13 @@ This image assumes that you are using a reverse proxy such as [jwilder/nginx-pro
 
 # Installation
 
-Automated builds of the image are available on [Docker Hub](https://hub.docker.com/tiredofit/nginx-proxy-cloudflare-companion) and is the recommended method of installation.
-
+Automated builds of the image are available on [Docker Hub](https://hub.docker.com/r/tiredofit/nginx-proxy-cloudflare-companion) and is the recommended method of installation.
 
 ```bash
-docker pull hub.docker.com/tiredofit/nginx-proxy-cloudflare-companion:(imagetag)
+docker pull tiredofit/nginx-proxy-cloudflare-companion:(imagetag)
 ```
 
-* `latest` - Most recent release w/Python 2 and Alpine 3.6
+* `latest` - Most recent release w/Python 2 and Alpine 3.9
 
 # Quick Start
 
@@ -53,14 +57,21 @@ Upon startup the image looks for an environment variable from your guest contain
 
 # Configuration
 
+### Volumes
+| File | Description |
+|-----------|-------------|
+| `/var/run/docker.sock` | You must have access to the docker socket in order to utilize this image |
+
 ### Environment Variables
 
 Along with the Environment Variables from the [Base image](https://hub.docker.com/r/tiredofit/alpine), below is the complete list of available options that can be used to customize your installation. By Default Cron and SMTP are disabled.
 
 | Parameter | Description |
 |-----------|-------------|
+| `DOCKER_ENTRYPOINT` | Docker Entrypoint default `unix://var/run/docker.sock` |
 | `CF_EMAIL` | Your Cloudflare Email Address |
 | `CF_TOKEN` | Token for the Domain |
+| `DEFAULT_TTL` | TTL to apply to records - Default `120` |
 | `TARGET_DOMAIN` | Destination Host to forward records to e.g. ``host.example.com` |
 | `DOMAIN1`   | Domain 1 you wish to update records for. |
 | `DOMAIN1_ZONE_ID`   | Domain 1 Zone ID from Cloudflare |
@@ -69,7 +80,6 @@ Along with the Environment Variables from the [Base image](https://hub.docker.co
 | `DOMAIN2_ZONE_ID`   | Domain 2 Zone ID from Cloudflare |
 | `DOMAIN2_PROXIED`   | Domain 1 True of False if proxied |
 | `DOMAIN3....`   | And so on.. |
-
 
 
 # Maintenance
