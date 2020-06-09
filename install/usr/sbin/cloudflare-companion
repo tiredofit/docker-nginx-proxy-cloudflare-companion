@@ -63,31 +63,34 @@ def check_container(c, doms):
                 print("Found Container:",cont_id,"with Hostname", value)
                 point_domain(value, doms)
 
+
 def init(doms):
     for c in client.containers.list(all=True):
         check_container(c, doms)
 
-try:
-    # 'email' needs to be 'None' if using token instead of api key
-    email = os.environ.get('CF_EMAIL', None)
-    token = os.environ['CF_TOKEN']
-    target_domain = os.environ['TARGET_DOMAIN']
-    domain = os.environ['DOMAIN1']
 
-except KeyError as e:
-    exit("ERROR: {} not defined".format(e))
+if __name__ == '__main__':
+    try:
+        # 'email' needs to be 'None' if using token instead of api key
+        email = os.environ.get('CF_EMAIL', None)
+        token = os.environ['CF_TOKEN']
+        target_domain = os.environ['TARGET_DOMAIN']
+        domain = os.environ['DOMAIN1']
 
-cf = CloudFlare.CloudFlare(email=email, token=token)
-client = docker.DockerClient(base_url='unix://var/run/docker.sock')
-doms = init_doms_from_env()
+    except KeyError as e:
+        exit("ERROR: {} not defined".format(e))
 
-init(doms)
+    cf = CloudFlare.CloudFlare(email=email, token=token)
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+    doms = init_doms_from_env()
 
-t = datetime.now().time().strftime("%s")
+    init(doms)
 
-for event in client.events(since=t, filters={'status': u'start'}, decode=True):
-    if event.get(u'status') == u'start':
-        try:
-            check_container(client.containers.get(event.get(u'id')), doms)
-        except docker.errors.NotFound as e:
-            pass
+    t = datetime.now().time().strftime("%s")
+
+    for event in client.events(since=t, filters={'status': u'start'}, decode=True):
+        if event.get(u'status') == u'start':
+            try:
+                check_container(client.containers.get(event.get(u'id')), doms)
+            except docker.errors.NotFound as e:
+                pass
