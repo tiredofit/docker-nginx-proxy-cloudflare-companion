@@ -1,3 +1,10 @@
+## 3.1.0 2020-06-09 <dave at tiredofit dot ca>
+
+   ### Added
+      - Alpine 3.11
+      - Update to support tiredofit/alpine 5.0.0 base image
+
+
 ## 3.0 2019-05-01 Dave Conroy <dave at tiredofit.ca>
 
 * Added DEFAULT_TTL env Var
