@@ -1,6 +1,8 @@
 #!/usr/bin/with-contenv bash
 
 source /assets/functions/00-container
+prepare_service
+
 PROCESS_NAME="nginx-proxy-cloudflare-companion"
 
 ### Sanity Test
