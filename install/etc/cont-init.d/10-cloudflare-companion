@@ -1,16 +1,15 @@
 #!/usr/bin/with-contenv bash
 
 source /assets/functions/00-container
-prepare_service
+prepare_service single
 
 PROCESS_NAME="nginx-proxy-cloudflare-companion"
 
 ### Sanity Test
-sanity_var $CF_EMAIL "Cloudflare Email"
-sanity_var $CF_TOKEN "Cloudflare Token"
-sanity_var $TARGET_DOMAIN "Target Domain"
-sanity_var $DOMAIN1 "Domain 1"
-sanity_var $DOMAIN1_ZONE_ID "Domain 1 Zone ID!"
+sanity_var CF_TOKEN "Cloudflare Token"
+sanity_var TARGET_DOMAIN "Target Domain"
+sanity_var DOMAIN1 "Domain 1"
+sanity_var DOMAIN1_ZONE_ID "Domain 1 Zone ID!"
 
 ### Create the Script
 cat <<EOF > /usr/sbin/cloudflare-companion
@@ -63,7 +62,7 @@ def check_container(c):
             cont_id = c.attrs.get(u'Id')
             if ',' in value:
                 for v in value.split(","):
-                    print "Found Container:",cont_id,"with Multi-Hostname",v 
+                    print "Found Container:",cont_id,"with Multi-Hostname",v
                     point_domain(v)
             else:
             	print "Found Container:",cont_id,"with Hostname", value

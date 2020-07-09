@@ -1,3 +1,10 @@
+## 3.1.1 2020-07-09 <dave at tiredofit dot ca>
+
+   ### Changed
+      - Bugfix for variables enforcement
+      - Removed requirement to have CF_EMAIL as it can be blank in specific cases
+
+
 ## 3.1.0 2020-06-09 <dave at tiredofit dot ca>
 
    ### Added
