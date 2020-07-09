@@ -1,3 +1,9 @@
+## 3.1.2 2020-07-09 <dave at tiredofit dot ca>
+
+   ### Added
+      - Alpine 3.12 base
+
+
 ## 3.1.1 2020-07-09 <dave at tiredofit dot ca>
 
    ### Changed
