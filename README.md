@@ -29,6 +29,7 @@ Dockerfile to build a Container to automatically update Cloudflare DNS records u
 - [Configuration](#configuration)
   - [Volumes](#volumes)
   - [Environment Variables](#environment-variables)
+  - [Docker Secrets](#docker-secrets)
 - [Maintenance](#maintenance)
   - [Shell Access](#shell-access)
 - [References](#references)
@@ -66,20 +67,29 @@ Upon startup the image looks for an environment variable from your guest contain
 
 Along with the Environment Variables from the [Base image](https://hub.docker.com/r/tiredofit/alpine), below is the complete list of available options that can be used to customize your installation. By Default Cron and SMTP are disabled.
 
-| Parameter           | Description                                                     |
-| ------------------- | --------------------------------------------------------------- |
-| `DOCKER_ENTRYPOINT` | Docker Entrypoint default `unix://var/run/docker.sock`          |
-| `CF_EMAIL`          | Your Cloudflare Email Address                                   |
-| `CF_TOKEN`          | Token for the Domain                                            |
-| `DEFAULT_TTL`       | TTL to apply to records - Default `120`                         |
-| `TARGET_DOMAIN`     | Destination Host to forward records to e.g. ``host.example.com` |
-| `DOMAIN1`           | Domain 1 you wish to update records for.                        |
-| `DOMAIN1_ZONE_ID`   | Domain 1 Zone ID from Cloudflare                                |
-| `DOMAIN1_PROXIED`   | Domain 1 True of False if proxied                               |
-| `DOMAIN2`           | (optional Domain 2 you wish to update records for.              |
-| `DOMAIN2_ZONE_ID`   | Domain 2 Zone ID from Cloudflare                                |
-| `DOMAIN2_PROXIED`   | Domain 1 True of False if proxied                               |
-| `DOMAIN3....`       | And so on..                                                     |
+| Parameter           | Description                                                                             | Default                      |
+| ------------------- | --------------------------------------------------------------------------------------- | ---------------------------- |
+| `DOCKER_ENTRYPOINT` | Docker Entrypoint default (local mode)                                                  | `unix://var/run/docker.sock` |
+| `DOCKER_HOST`       | (optional) If using tcp connection e.g. `tcp://111.222.111.32:2376`                     |                              |
+| `DOCKER_CERT_PATH`  | (optional) If using tcp connection with TLS - Certificate location e.g. `/docker-certs` |                              |
+| `DOCKER_TLS_VERIFY` | (optional) If using tcp conneciton to socket Verify TLS                                 | `1`                          |
+| `REFRESH_ENTRIES`   | If record exists, update entry with new values `TRUE` or `FALSE`                        | `TRUE`                       |
+| `SWARM_MODE`        | Enable Docker Swarm Mode `TRUE` or `FALSE`                                              | `FALSE`                      |
+| `CF_EMAIL`          | Email address tied to Cloudflare Account - Leave Blank  for Scoped API                  |                              |
+| `CF_TOKEN`          | API Token for the Domain                                                                |                              |
+| `DEFAULT_TTL`       | TTL to apply to records                                                                 | `1`                          |
+| `TARGET_DOMAIN`     | Destination Host to forward records to e.g. `host.example.com`                          |                              |
+| `DOMAIN1`           | Domain 1 you wish to update records for.                                                |                              |
+| `DOMAIN1_ZONE_ID`   | Domain 1 Zone ID from Cloudflare                                                        |                              |
+| `DOMAIN1_PROXIED`   | Domain 1 True or False if proxied                                                       |                              |
+| `DOMAIN2`           | (optional Domain 2 you wish to update records for.)                                     |                              |
+| `DOMAIN2_ZONE_ID`   | Domain 2 Zone ID from Cloudflare                                                        |                              |
+| `DOMAIN2_PROXIED`   | Domain 1 True or False if proxied                                                       |                              |
+| `DOMAIN3....`       | And so on..                                                                             |                              |
+
+### Docker Secrets
+
+`CF_EMAIL` and `CF_TOKEN` support Docker Secrets
 
 
 ## Maintenance

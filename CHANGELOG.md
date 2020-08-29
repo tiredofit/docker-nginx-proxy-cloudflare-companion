@@ -1,3 +1,16 @@
+## 4.0.0 2020-08-29 <dave at tiredofit dot ca>
+
+   ### Added
+      - Docker Secrets Support
+      - Docker Swarm Support
+      - Refresh Entries if they already exist in Cloudflare
+      - Scoped API Token support
+      - Support more than 20 Domains
+      - Lookup DNS Zone if not provided
+      - Debug Mode - Set CONTAINER_LOG_LEVEL=DEBUG for verbosity
+      - Pure Python 3 Implementation (initial credit: bugficks@github)
+
+
 ## 3.1.2 2020-07-09 <dave at tiredofit dot ca>
 
    ### Added
@@ -22,8 +35,8 @@
 
 * Added DEFAULT_TTL env Var
 * Added DOCKER_ENTRYPOINT env Var
-* Cleaned up Output 
-* Alpine 3.9 
+* Cleaned up Output
+* Alpine 3.9
 
 ## 2.1 2017-12-01 Dave Conroy <dave at tiredofit.ca>
 

@@ -1,14 +1,20 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+
 from __future__ import print_function
-import os, re
-import docker
-import CloudFlare
 from datetime import datetime
+from get_docker_secret import get_docker_secret
+import CloudFlare
+import docker
+import json
+import os
+import re
 
-DEFAULT_TTL = os.environ.get('DEFAULT_TTL', "120")
-DOCKER_ENDPOINT = os.environ.get('DOCKER_ENDPOINT', "unix://var/run/docker.sock")
+DEFAULT_TTL = os.environ.get('DEFAULT_TTL', "1")
+SWARM_MODE = os.environ.get('SWARM_MODE', "FALSE")
+REFRESH_ENTRIES = os.environ.get('REFRESH_ENTRIES', "FALSE" )
+CONTAINER_LOG_LEVEL = os.environ.get('CONTAINER_LOG_LEVEL', "INFO")
 
-def init_doms_from_env(cf):
+def init_doms_from_env():
     RX_DOMS = re.compile('^DOMAIN[0-9]+$', re.IGNORECASE)
 
     doms = list()
@@ -19,48 +25,24 @@ def init_doms_from_env(cf):
         name = os.environ[k]
         try:
             dom = {
-                'name' : name,
-                'proxied' : os.environ.get("{}_PROXIED".format(k), "FALSE").upper() == "TRUE",
-                'zone_id' : os.environ.get("{}_ZONE_ID".format(k), None),
-                'ttl' : os.environ.get("{}_TTL".format(k), DEFAULT_TTL),
+                'name': name,
+                'proxied': os.environ.get("{}_PROXIED".format(k), "FALSE").upper() == "TRUE",
+                'zone_id': os.environ["{}_ZONE_ID".format(k)],
+                'ttl': os.environ.get("{}_TTL".format(k), DEFAULT_TTL),
             }
 
             doms.append(dom)
 
         except KeyError as e:
-            print("ERROR: {} is not set!".format(e))
+            print("*** ERROR: {} is not set!".format(e))
 
-
-    try:
-        params = {
-            'name': ','.join([dom['name'] for dom in doms if not dom['zone_id']])
-        }
-        zones = cf.zones.get(params=params)
-        for zone in zones:
-            zone_name = zone['name']
-            for dom in doms:
-                if dom['name'] == zone_name:
-                    dom['zone_id'] = zone['id']
-                    break
-
-
-    except CloudFlare.exceptions.CloudFlareAPIError as e:
-        print('** %s - %d %s' % (name, e, e))
-
-    ret = list()
-    for dom in doms:
-        if dom['zone_id']:
-            print('Adding domain:', dom)
-            ret.append(dom)
-        else:
-            print("ERROR zone_id:", dom)
-
-    return ret
+    return doms
 
 
 def point_domain(name, doms):
     for dom in doms:
         if name.find(dom['name']) >= 0:
+            records = cf.zones.dns_records.get(dom['zone_id'], params={u'name':name})
             data = {
                 u'type': u'CNAME',
                 u'name': name,
@@ -68,54 +50,156 @@ def point_domain(name, doms):
                 u'ttl': dom['ttl'],
                 u'proxied': dom['proxied']
             }
-            try:
-                r = cf.zones.dns_records.post(dom['zone_id'], data=data)
+            if REFRESH_ENTRIES is True :
+                try:
+                    if len(records) == 0:
+                        r = cf.zones.dns_records.post(dom['zone_id'], data=data)
+                        print ("[info] Created new record:", name, "to point to", target_domain)
+                    else:
+                        for record in records:
+                            cf.zones.dns_records.put(dom['zone_id'], record["id"], data=data)
+                            print ("[info] Updated existing record:", name, "to point to", target_domain)
+                except CloudFlare.exceptions.CloudFlareAPIError as e:
+                    pass
+            else:
+                try:
+                    r = cf.zones.dns_records.post(dom['zone_id'], data=data)
+                    print ("[info] Created new record:", name, "to point to", target_domain)
 
-            except CloudFlare.exceptions.CloudFlareAPIError as e:
-                print('** %s - %d %s' % (name, e, e))
+                except CloudFlare.exceptions.CloudFlareAPIError as e:
+                    print('** %s - %d %s' % (name, e, e))
 
 
-def check_container(c, doms):
+def check_container_nginx(c, doms):
+    if CONTAINER_LOG_LEVEL == "DEBUG" :
+         print ("[debug] Called check_container_nginx for:", s)
+    cont_id = c.attrs.get(u'Id')
     for prop in c.attrs.get(u'Config').get(u'Env'):
          if u'VIRTUAL_HOST' in prop or u'DNS_NAME' in prop:
             value = prop.split("=")[1].strip()
-            cont_id = c.attrs.get(u'Id')
             if ',' in value:
                 for v in value.split(","):
-                    print("Found Container:",cont_id,"with Multi-Hostname",v)
+                    print("[info] Found Container ID:",cont_id,"with Multi-Hostname",v)
                     point_domain(v, doms)
             else:
-                print("Found Container:",cont_id,"with Hostname", value)
+                print("info Found ContainerID :",cont_id,"with Hostname", value)
                 point_domain(value, doms)
 
 
+def check_service_nginx(s, doms):
+    if CONTAINER_LOG_LEVEL == "DEBUG" :
+         print ("[debug] Called check_service_nginx for:", s)
+    cont_id = s
+    s = client.services.get(s)
+    for prop in s.attrs.get(u'Spec').get(u'TaskTemplate').get(u'ContainerSpec').get(u'Env'):
+         if u'VIRTUAL_HOST' in prop or u'DNS_NAME' in prop:
+            value = prop.split("=")[1].strip()
+            if ',' in value:
+                for v in value.split(","):
+                    print("[info] Found Container ID:",cont_id,"with Multi-Hostname",v)
+                    point_domain(v, doms)
+            else:
+                print("info Found ContainerID :",cont_id,"with Hostname", value)
+                point_domain(value, doms)
+         else: pass
+
+
 def init(doms):
-    for c in client.containers.list(all=True):
-        check_container(c, doms)
+    if CONTAINER_LOG_LEVEL == "DEBUG" :
+        print ("[debug] Starting Initialization Routines")
+
+    for c in client.containers.list():
+        if CONTAINER_LOG_LEVEL == "DEBUG" :
+            print ("[debug] Container List Discovery Loop")
+
+        check_container_nginx(c, doms)
+
+    if SWARM_MODE :
+        if CONTAINER_LOG_LEVEL == "DEBUG" :
+            print ("[debug] Service List Discovery Loop")
+        for s in api.services():
+            full_serv_id = s["ID"]
+            short_serv_id = full_serv_id[:10]
+            serv_id = "<Service: " + short_serv_id +">"
+            cont = str(api.containers(quiet=1, filters={'label': 'com.docker.swarm.service.id=' + full_serv_id}))
+            full_cont_id = cont[9:-4]
+            short_cont_id = full_cont_id[:10]
+            cont_id = "<Container: " + short_cont_id +">"
+            check_service_nginx(full_serv_id, doms)
+
+try:
+    email = get_docker_secret('CF_EMAIL', autocast_name=False, getenv=True)
+    token = get_docker_secret('CF_TOKEN', autocast_name=False, getenv=True)
+    target_domain= os.environ['TARGET_DOMAIN']
+    domain= os.environ['DOMAIN1']
+except KeyError as e:
+    exit("ERROR: {} not defined".format(e))
+
+if CONTAINER_LOG_LEVEL.lower() == "debug":
+    CONTAINER_LOG_LEVEL = "DEBUG"
+
+if REFRESH_ENTRIES.lower() == "true":
+    REFRESH_ENTRIES = True
+elif REFRESH_ENTRIES.lower() == "false":
+    REFRESH_ENTRIES = False
+
+if SWARM_MODE.lower() == "true":
+    SWARM_MODE = True
+elif SWARM_MODE.lower() == "false":
+    SWARM_MODE = False
 
 
-if __name__ == '__main__':
-    try:
-        # 'email' needs to be 'None' if using token instead of api key
-        email = os.environ.get('CF_EMAIL', None)
-        token = os.environ['CF_TOKEN']
-        target_domain = os.environ['TARGET_DOMAIN']
-        domain = os.environ['DOMAIN1']
+if CONTAINER_LOG_LEVEL == "DEBUG" :
+    print ("[debug] Swarm Mode:", SWARM_MODE)
+    print ("[debug] Refresh Entries:", REFRESH_ENTRIES)
+    print ("[debug] Default TTL:", DEFAULT_TTL)
+    if not email :
+          print ("[debug] API Mode: Scoped")
+          cf = CloudFlare.CloudFlare(debug=True, token=token)
+    else:
+          print ("[debug] API Mode: Global")
+          cf = CloudFlare.CloudFlare(debug=True, email=email, token=token)
+else :
+    if not email :
+          cf = CloudFlare.CloudFlare(token=token)
+    else:
+          cf = CloudFlare.CloudFlare(email=email, token=token)
 
-    except KeyError as e:
-        exit("ERROR: {} not defined".format(e))
 
-    cf = CloudFlare.CloudFlare(email=email, token=token)
-    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
-    doms = init_doms_from_env(cf)
+client= docker.from_env()
+api= docker.APIClient()
+doms= init_doms_from_env()
 
-    init(doms)
+init(doms)
 
-    t = datetime.now().time().strftime("%s")
+if CONTAINER_LOG_LEVEL == "DEBUG" :
+    print ("[debug] Starting event watch routines")
 
-    for event in client.events(since=t, filters={'status': u'start'}, decode=True):
-        if event.get(u'status') == u'start':
-            try:
-                check_container(client.containers.get(event.get(u'id')), doms)
-            except docker.errors.NotFound as e:
-                pass
+t= datetime.now().strftime("%s")
+
+if CONTAINER_LOG_LEVEL == "DEBUG" :
+    print ("[debug] Time:", t)
+
+
+for event in client.events(since=t, filters={'Type': 'service', 'Action': u'update', 'status': u'start'}, decode=True):
+
+    if event.get(u'status') == u'start' :
+        try:
+            check_container_nginx(client.containers.get(event.get(u'id')), doms)
+            if SWARM_MODE :
+                check_service_nginx(client.services.get(event.get(u'id')), doms)
+
+        except docker.errors.NotFound as e:
+            pass
+
+    if SWARM_MODE :
+        if event.get(u'Action') == u'update' :
+           try:
+               node_id = event.get(u'Actor').get(u'ID')
+               if CONTAINER_LOG_LEVEL == "DEBUG" :
+                   print ("[debug] Detected Update on node:", node_id)
+               check_service_nginx(node_id , doms)
+
+           except docker.errors.NotFound as e:
+               pass
+
