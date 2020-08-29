@@ -1,0 +1,121 @@
+#!/usr/bin/python
+from __future__ import print_function
+import os, re
+import docker
+import CloudFlare
+from datetime import datetime
+
+DEFAULT_TTL = os.environ.get('DEFAULT_TTL', "120")
+DOCKER_ENDPOINT = os.environ.get('DOCKER_ENDPOINT', "unix://var/run/docker.sock")
+
+def init_doms_from_env(cf):
+    RX_DOMS = re.compile('^DOMAIN[0-9]+$', re.IGNORECASE)
+
+    doms = list()
+    for k in os.environ:
+        if not RX_DOMS.match(k):
+            continue
+
+        name = os.environ[k]
+        try:
+            dom = {
+                'name' : name,
+                'proxied' : os.environ.get("{}_PROXIED".format(k), "FALSE").upper() == "TRUE",
+                'zone_id' : os.environ.get("{}_ZONE_ID".format(k), None),
+                'ttl' : os.environ.get("{}_TTL".format(k), DEFAULT_TTL),
+            }
+
+            doms.append(dom)
+
+        except KeyError as e:
+            print("ERROR: {} is not set!".format(e))
+
+
+    try:
+        params = {
+            'name': ','.join([dom['name'] for dom in doms if not dom['zone_id']])
+        }
+        zones = cf.zones.get(params=params)
+        for zone in zones:
+            zone_name = zone['name']
+            for dom in doms:
+                if dom['name'] == zone_name:
+                    dom['zone_id'] = zone['id']
+                    break
+
+
+    except CloudFlare.exceptions.CloudFlareAPIError as e:
+        print('** %s - %d %s' % (name, e, e))
+
+    ret = list()
+    for dom in doms:
+        if dom['zone_id']:
+            print('Adding domain:', dom)
+            ret.append(dom)
+        else:
+            print("ERROR zone_id:", dom)
+
+    return ret
+
+
+def point_domain(name, doms):
+    for dom in doms:
+        if name.find(dom['name']) >= 0:
+            data = {
+                u'type': u'CNAME',
+                u'name': name,
+                u'content': target_domain,
+                u'ttl': dom['ttl'],
+                u'proxied': dom['proxied']
+            }
+            try:
+                r = cf.zones.dns_records.post(dom['zone_id'], data=data)
+
+            except CloudFlare.exceptions.CloudFlareAPIError as e:
+                print('** %s - %d %s' % (name, e, e))
+
+
+def check_container(c, doms):
+    for prop in c.attrs.get(u'Config').get(u'Env'):
+         if u'VIRTUAL_HOST' in prop or u'DNS_NAME' in prop:
+            value = prop.split("=")[1].strip()
+            cont_id = c.attrs.get(u'Id')
+            if ',' in value:
+                for v in value.split(","):
+                    print("Found Container:",cont_id,"with Multi-Hostname",v)
+                    point_domain(v, doms)
+            else:
+                print("Found Container:",cont_id,"with Hostname", value)
+                point_domain(value, doms)
+
+
+def init(doms):
+    for c in client.containers.list(all=True):
+        check_container(c, doms)
+
+
+if __name__ == '__main__':
+    try:
+        # 'email' needs to be 'None' if using token instead of api key
+        email = os.environ.get('CF_EMAIL', None)
+        token = os.environ['CF_TOKEN']
+        target_domain = os.environ['TARGET_DOMAIN']
+        domain = os.environ['DOMAIN1']
+
+    except KeyError as e:
+        exit("ERROR: {} not defined".format(e))
+
+    cf = CloudFlare.CloudFlare(email=email, token=token)
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+    doms = init_doms_from_env(cf)
+
+    init(doms)
+
+    t = datetime.now().time().strftime("%s")
+
+    for event in client.events(since=t, filters={'status': u'start'}, decode=True):
+        if event.get(u'status') == u'start':
+            try:
+                check_container(client.containers.get(event.get(u'id')), doms)
+            except docker.errors.NotFound as e:
+                pass

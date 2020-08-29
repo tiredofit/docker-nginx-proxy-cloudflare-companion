@@ -1,7 +1,13 @@
 #!/usr/bin/with-contenv bash
 
-source /assets/functions/00-container
-prepare_service single
+
+### Sanity Test
+#if [ -z ${CF_EMAIL} ] ; then printf "** [nginx-proxy-cloudflare-companion] ERROR: CF_EMAIL is not set!\n"; exit 1; fi;
+if [ -z ${CF_TOKEN} ] ; then printf "** [nginx-proxy-cloudflare-companion] ERROR: CF_TOKEN is not set!\n"; exit 1; fi;
+if [ -z ${TARGET_DOMAIN} ] ; then printf "** [nginx-proxy-cloudflare-companion] ERROR: TARGET_DOMAIN is not set!\n"; exit 1; fi;
+if [ -z ${DOMAIN1} ] ; then printf "** [nginx-proxy-cloudflare-companion] ERROR: DOMAIN1 is not set!\n"; exit 1; fi;
+if [ -z ${DOMAIN1_ZONE_ID} ] ; then printf "** [nginx-proxy-cloudflare-companion] ERROR: DOMAIN1_ZONE_ID!\n"; exit 1; fi;
+
 
 PROCESS_NAME="nginx-proxy-cloudflare-companion"
 
@@ -11,87 +17,5 @@ sanity_var TARGET_DOMAIN "Target Domain"
 sanity_var DOMAIN1 "Domain 1"
 sanity_var DOMAIN1_ZONE_ID "Domain 1 Zone ID!"
 
-### Create the Script
-cat <<EOF > /usr/sbin/cloudflare-companion
-
-#!/usr/bin/python
-import os
-import docker
-import CloudFlare
-from datetime import datetime
-
-def point_domain(name):
-    try:
-EOF
-
-### Loop through DOMAIN* Variables
-    NUM=`printenv | sort | grep '\DOMAIN.*' | wc -l`
-    for (( i = 1; i <= $NUM; i++ ))
-        do
-        domain_tmp=DOMAIN${i}
-        if [ "${!domain_tmp}" != "" ] ; then
-            cat <<EOF >> /usr/sbin/cloudflare-companion
-
-            domain${i} = os.environ['DOMAIN${i}']
-            zone_id${i} = os.environ['DOMAIN${i}_ZONE_ID']
-            try:
-                if os.environ['DOMAIN${i}_PROXIED'].upper() == "TRUE":
-                    proxied_flag${i} = True
-                else:
-                    proxied_flag${i} = False
-            except KeyError:
-                proxied_flag${i} = False
-
-            if name.find(domain${i}) != -1:
-                r = cf.zones.dns_records.post(zone_id${i},data={u'type': u'CNAME', u'name': name, u'content': target_domain, u'ttl': ${DEFAULT_TTL}, u'proxied': proxied_flag${i}} )
-
-EOF
-        fi
-        done
-
-### Finish rest of script
-cat <<EOF >> /usr/sbin/cloudflare-companion
-    except CloudFlare.exceptions.CloudFlareAPIError as e:
-        print '** %s - %d %s' % (name, e, e)
-
-
-def check_container(c):
-    for prop in c.attrs.get(u'Config').get(u'Env'):
-         if u'VIRTUAL_HOST' in prop or u'DNS_NAME' in prop:
-            value = prop.split("=")[1].strip()
-            cont_id = c.attrs.get(u'Id')
-            if ',' in value:
-                for v in value.split(","):
-                    print "Found Container:",cont_id,"with Multi-Hostname",v
-                    point_domain(v)
-            else:
-            	print "Found Container:",cont_id,"with Hostname", value
-                point_domain(value)
-
-def init():
-    for c in client.containers.list(all=True):
-        check_container(c)
-
-email = os.environ['CF_EMAIL']
-token = os.environ['CF_TOKEN']
-target_domain = os.environ['TARGET_DOMAIN']
-domain = os.environ['DOMAIN1']
-
-cf = CloudFlare.CloudFlare(email=email, token=token)
-client = docker.DockerClient(base_url='${DOCKER_ENDPOINT}')
-
-init()
-
-t = datetime.now().time().strftime("%s")
-
-for event in client.events(since=t, filters={'status': u'start'}, decode=True):
-    if event.get(u'status') == u'start':
-        try:
-            check_container(client.containers.get(event.get(u'id')))
-        except docker.errors.NotFound as e:
-            pass
-EOF
-
-chmod +x /usr/sbin/cloudflare-companion
 
 liftoff
