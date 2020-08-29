@@ -1,3 +1,23 @@
+## 3.1.2 2020-07-09 <dave at tiredofit dot ca>
+
+   ### Added
+      - Alpine 3.12 base
+
+
+## 3.1.1 2020-07-09 <dave at tiredofit dot ca>
+
+   ### Changed
+      - Bugfix for variables enforcement
+      - Removed requirement to have CF_EMAIL as it can be blank in specific cases
+
+
+## 3.1.0 2020-06-09 <dave at tiredofit dot ca>
+
+   ### Added
+      - Alpine 3.11
+      - Update to support tiredofit/alpine 5.0.0 base image
+
+
 ## 3.0 2019-05-01 Dave Conroy <dave at tiredofit.ca>
 
 * Added DEFAULT_TTL env Var
