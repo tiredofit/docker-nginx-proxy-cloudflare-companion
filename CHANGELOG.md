@@ -1,3 +1,9 @@
+## 4.1.0 2021-05-03 <dave at tiredofit dot ca>
+
+   ### Added
+      - Add Rust build dependency
+
+
 ## 4.0.1 2021-01-14 <dave at tiredofit dot ca>
 
    ### Changed

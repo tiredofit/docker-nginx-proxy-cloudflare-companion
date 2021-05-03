@@ -1,20 +1,18 @@
-# hub.docker.com/r/tiredofit/nginx-proxy-cloudflare-companion
+# github.com/tiredofit/docker-nginx-proxy-cloudflare-companion
 
-[![Build Status](https://img.shields.io/docker/build/tiredofit/nginx-proxy-cloudflare-companion.svg)](https://hub.docker.com/r/tiredofit/nginx-proxy-cloudflare-companion)
-[![Docker Pulls](https://img.shields.io/docker/pulls/tiredofit/nginx-proxy-cloudflare-companion.svg)](https://hub.docker.com/r/tiredofit/nginx-proxy-cloudflare-companion)
-[![Docker Stars](https://img.shields.io/docker/stars/tiredofit/nginx-proxy-cloudflare-companion.svg)](https://hub.docker.com/r/tiredofit/nginx-proxy-cloudflare-companion)
-[![Docker Layers](https://images.microbadger.com/badges/image/tiredofit/nginx-proxy-cloudflare-companion.svg)](https://microbadger.com/images/tiredofit/nginx-proxy-cloudflare-companion)
+[![GitHub release](https://img.shields.io/github/v/tag/tiredofit/docker-nginx-proxy-cloudflare-companion?style=flat-square)](https://github.com/tiredofit/docker-nginx-proxy-cloudflare-companion/releases/latest)
+[![Build Status](https://img.shields.io/github/workflow/status/tiredofit/docker-nginx-proxy-cloudflare-companion/build?style=flat-square)](https://github.com/tiredofit/docker-nginx-proxy-cloudflare-companion/actions?query=workflow%3Abuild)
+[![Docker Stars](https://img.shields.io/docker/stars/tiredofit/nginx-proxy-cloudflare-companion.svg?style=flat-square&logo=docker)](https://hub.docker.com/r/tiredofit/nginx-proxy-cloudflare-companion/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/tiredofit/nginx-proxy-cloudflare-companion.svg?style=flat-square&logo=docker)](https://hub.docker.com/r/tiredofit/nginx-proxy-cloudflare-companion/)
+[![Become a sponsor](https://img.shields.io/badge/sponsor-tiredofit-181717.svg?logo=github&style=flat-square)](https://github.com/sponsors/tiredofit)
+[![Paypal Donate](https://img.shields.io/badge/donate-paypal-00457c.svg?logo=paypal&style=flat-square)](https://www.paypal.me/tiredofit)
 
-## Introduction
+* * *
+## About
 
-Dockerfile to build a Container to automatically update Cloudflare DNS records upon container start. A time saver if you are regularly moving containers around to different systems. This will allow you to set multiple zone's you wish to update.
+This builds a Docker image to automatically update Cloudflare DNS records upon container start. A time saver if you are regularly moving containers around to different systems. This will allow you to set multiple zone's you wish to update.
 
-* This Container uses a [customized Alpine Linux base](https://hub.docker.com/r/tiredofit/alpine) which includes [s6 overlay](https://github.com/just-containers/s6-overlay) enabled for PID 1 Init capabilities, [zabbix-agent](https://zabbix.org) for individual container monitoring, Cron also installed along with other tools (bash,curl, less, logrotate, nano, vim) for easier management. It also supports sending to external SMTP servers..
-
-
-[Changelog](CHANGELOG.md)
-
-## Authors
+## Maintainer
 
 - [Dave Conroy](http://github/tiredofit/)
 
@@ -34,19 +32,30 @@ Dockerfile to build a Container to automatically update Cloudflare DNS records u
   - [Shell Access](#shell-access)
 - [References](#references)
 
-## Prerequisites
-
-This image assumes that you are using a reverse proxy such as [jwilder/nginx-proxy](https://github.com/jwilder/nginx-proxy) and optionally the [Let's Encrypt Proxy Companion @ https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion](https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion) in order to serve your pages.
-
+## Prerequisites and Assumptions
+*  Assumes you are using Traefik as a reverse proxy:
+   *  [Nginx-Proxy](https://github.com/jwilder/nginx-proxy)
+   *
 ## Installation
+### Build from Source
+Clone this repository and build the image with `docker build -t (imagename) .`
 
-Automated builds of the image are available on [Docker Hub](https://hub.docker.com/r/tiredofit/nginx-proxy-cloudflare-companion) and is the recommended method of installation.
+### Prebuilt Images
+Builds of the image are available on [Docker Hub](https://hub.docker.com/r/tiredofit/traefik-cloudflare-companion) and is the recommended method of installation.
 
 ```bash
-docker pull tiredofit/nginx-proxy-cloudflare-companion:(imagetag)
+docker pull tiredofit/traefik-cloudflare-companion:(imagetag)
 ```
+The following image tags are available along with their taged release based on what's written in the [Changelog](CHANGELOG.md):
 
-* `latest` - Most recent release w/Python 3 and Alpine 3.12
+| Container OS | Tag       |
+| ------------ | --------- |
+| Alpine       | `:latest` |
+
+#### Multi Archictecture
+Images are built primarily for `amd64` architecture, and may also include builds for `arm/v6`, `arm/v7`, `arm64` and others. These variants are all unsupported. Consider [sponsoring](https://github.com/sponsors/tiredofit) my work so that I can work with various hardware. To see if this image supports multiple architecures, type `docker manifest (image):(tag)`
+
+## Configuration
 
 ### Quick Start
 
@@ -54,10 +63,9 @@ docker pull tiredofit/nginx-proxy-cloudflare-companion:(imagetag)
 
 * Set various [environment variables](#environment-variables) to understand the capabilities of this image.
 
-Upon startup the image looks for an environment variable from your guest container of either `VIRTUAL_HOST` or `DNS_HOST` and updates Cloudflare with a CNAME record of your `TARGET_DOMAIN`. Previous versions of this container used to only update one Zone, however with the additional of the `DOMAIN` environment variables it now parses the containers variables and updates the appropriate zone.
+Upon startup the image looks for a label containing `traefik.frontend.rule` (version 1) or `Host*` (version2) from your running containers of either updates Cloudflare with a CNAME record of your `TARGET_DOMAIN`. Previous versions of this container used to only update one Zone, however with the additional of the `DOMAIN` environment variables it now parses the containers variables and updates the appropriate zone.
 
-## Configuration
-
+For those wishing to assign multiple CNAMEs to a container use the following format:
 ### Volumes
 | File                   | Description                                                              |
 | ---------------------- | ------------------------------------------------------------------------ |
@@ -65,7 +73,16 @@ Upon startup the image looks for an environment variable from your guest contain
 
 ### Environment Variables
 
-Along with the Environment Variables from the [Base image](https://hub.docker.com/r/tiredofit/alpine), below is the complete list of available options that can be used to customize your installation. By Default Cron and SMTP are disabled.
+#### Base Images used
+
+This image relies on an [Alpine Linux](https://hub.docker.com/r/tiredofit/alpine) or [Debian Linux](https://hub.docker.com/r/tiredofit/debian) base image that relies on an [init system](https://github.com/just-containers/s6-overlay) for added capabilities. Outgoing SMTP capabilities are handlded via `msmtp`. Individual container performance monitoring is performed by [zabbix-agent](https://zabbix.org). Additional tools include: `bash`,`curl`,`less`,`logrotate`, `nano`,`vim`.
+
+Be sure to view the following repositories to understand all the customizable options:
+
+| Image                                                  | Description                            |
+| ------------------------------------------------------ | -------------------------------------- |
+| [OS Base](https://github.com/tiredofit/docker-alpine/) | Customized Image based on Alpine Linux |
+
 
 | Parameter           | Description                                                                             | Default                      |
 | ------------------- | --------------------------------------------------------------------------------------- | ---------------------------- |
@@ -90,18 +107,41 @@ Along with the Environment Variables from the [Base image](https://hub.docker.co
 ### Docker Secrets
 
 `CF_EMAIL` and `CF_TOKEN` support Docker Secrets
+Name your secrets either CF_EMAIL and CF_TOKEN or cf_email and cf_token.
 
 
+* * *
 ## Maintenance
 ### Shell Access
 
 For debugging and maintenance purposes you may want access the containers shell.
 
 ```bash
-docker exec -it (whatever your container name is e.g. nginx-proxy-cloudflare-companion) bash
+docker exec -it (whatever your container name is e.g. traefik-cloudflare-companion) bash
 ```
+
+## Support
+
+These images were built to serve a specific need in a production environment and gradually have had more functionality added based on requests from the community.
+### Usage
+- The [Discussions board](../../discussions) is a great place for working with the community on tips and tricks of using this image.
+- Consider [sponsoring me](https://github.com/sponsors/tiredofit) personalized support.
+### Bugfixes
+- Please, submit a [Bug Report](issues/new) if something isn't working as expected. I'll do my best to issue a fix in short order.
+
+### Feature Requests
+- Feel free to submit a feature request, however there is no guarantee that it will be added, or at what timeline.
+- Consider [sponsoring me](https://github.com/sponsors/tiredofit) regarding development of features.
+
+### Updates
+- Best effort to track upstream changes, More priority if I am actively using the image in a production environment.
+- Consider [sponsoring me](https://github.com/sponsors/tiredofit) for up to date releases.
+
+## License
+MIT. See [LICENSE](LICENSE) for more details.
 
 ## References
 
 * https://www.cloudflare.com
+* https://github.com/tiredofit/docker-traefik-cloudflare-companion
 * https://github.com/code5-lab/dns-flare
