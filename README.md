@@ -35,7 +35,7 @@ This builds a Docker image to automatically update Cloudflare DNS records upon c
 ## Prerequisites and Assumptions
 *  Assumes you are using Traefik as a reverse proxy:
    *  [Nginx-Proxy](https://github.com/jwilder/nginx-proxy)
-   *
+
 ## Installation
 ### Build from Source
 Clone this repository and build the image with `docker build -t (imagename) .`
