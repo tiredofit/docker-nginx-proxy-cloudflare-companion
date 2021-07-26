@@ -7,5 +7,5 @@ check_container_initialized
 check_service_initialized init
 liftoff
 
-print_info "Starting Nginx Proxy Cloudflare Companion"
+print_start "Starting Nginx Proxy Cloudflare Companion"
 exec python3 -u /usr/sbin/cloudflare-companion
