@@ -72,7 +72,7 @@ def point_domain(name, doms):
 
 def check_container_nginx(c, doms):
     if CONTAINER_LOG_LEVEL == "DEBUG" :
-         print ("[debug] Called check_container_nginx for:", s)
+         print ("[debug] Called check_container_nginx for:", c)
     cont_id = c.attrs.get(u'Id')
     for prop in c.attrs.get(u'Config').get(u'Env'):
          if u'VIRTUAL_HOST' in prop or u'DNS_NAME' in prop:
