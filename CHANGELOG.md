@@ -1,3 +1,9 @@
+## 4.1.4 2022-05-24 <w33ble@github>
+
+   ### Fixed
+      - Log Debug Mode fix
+
+
 ## 4.1.3 2022-05-24 <dave at tiredofit dot ca>
 
    ### Added
