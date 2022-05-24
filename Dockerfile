@@ -1,9 +1,11 @@
-FROM docker.io/tiredofit/alpine:3.15
+FROM docker.io/tiredofit/alpine:3.16
 LABEL maintainer="Dave Conroy (github.com/tiredofit)"
 
 ### Set Environment Variables
-ENV ENABLE_CRON=false \
-    CONTAINER_ENABLE_MESSAGING=FALSE
+ENV ENABLE_CRON=FALSE \
+    CONTAINER_ENABLE_MESSAGING=FALSE \
+    IMAGE_NAME="tiredofit/nginx-proxy-cloudflare-companion" \
+    IMAGE_REPO_URL="https://github.com/tiredofit/docker-nginx-proxy-cloudflare-companion/"
 
 ### Dependencies
 RUN set -x && \
