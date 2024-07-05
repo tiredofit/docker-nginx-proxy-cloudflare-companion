@@ -36,7 +36,7 @@ RUN set -x && \
                 && \
     \
     pip install \
-            cloudflare \
+            cloudflare==2.19.* \
             get-docker-secret \
             docker[tls] \
             && \

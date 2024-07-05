@@ -9,7 +9,7 @@ import json
 import os
 import re
 
-DEFAULT_TTL = os.environ.get('DEFAULT_TTL', "1")
+DEFAULT_TTL = os.environ.get('DEFAULT_TTL', 1)
 SWARM_MODE = os.environ.get('SWARM_MODE', "FALSE")
 REFRESH_ENTRIES = os.environ.get('REFRESH_ENTRIES', "FALSE" )
 CONTAINER_LOG_LEVEL = os.environ.get('CONTAINER_LOG_LEVEL', "INFO")
@@ -47,7 +47,7 @@ def point_domain(name, doms):
                 u'type': u'CNAME',
                 u'name': name,
                 u'content': target_domain,
-                u'ttl': dom['ttl'],
+                u'ttl': int(dom['ttl']),
                 u'proxied': dom['proxied']
             }
             if REFRESH_ENTRIES is True :
